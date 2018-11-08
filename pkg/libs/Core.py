@@ -1,5 +1,5 @@
-# Copyright 2012-2017 Jonathan Vasquez <jon@xyinn.org>
-# 
+# Copyright 2012-2018 Jonathan Vasquez <jon@xyinn.org>
+#
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
 #
@@ -161,7 +161,7 @@ class Core:
 
         # If the required binaries don't exist, then exit
         for binary in var.prel_bin:
-            if not os.path.isfile(binary):
+            if not os.path.isfile(Tools.GetProgramPath(binary)):
                 Tools.BinaryDoesntExist(binary)
 
     # Generates the modprobe information
@@ -234,38 +234,82 @@ class Core:
     @classmethod
     def CreateLibraryLinks(cls):
         # Set library symlinks
+
+        # Lots of repetition here, probably could use regex and another function to reduce the duplication.
+        # The regex needs to detect both *.so and *.so.* files, and no more.
         if os.path.isdir(var.temp + "/usr/lib") and os.path.isdir(var.temp + "/lib64"):
-            pcmd = 'find /usr/lib -iname "*.so.*" -exec ln -s "{}" /lib64 \;'
+            pcmd = 'find /usr/lib/ -iname "*.so.*" -exec ln -sf "{}" /lib64 \;'
+            cmd = 'chroot ' + var.temp + ' /bin/busybox sh -c "' + pcmd + '"'
+            call(cmd, shell=True)
+
+            pcmd = 'find /usr/lib/ -iname "*.so" -exec ln -sf "{}" /lib64 \;'
             cmd = 'chroot ' + var.temp + ' /bin/busybox sh -c "' + pcmd + '"'
             call(cmd, shell=True)
 
         if os.path.isdir(var.temp + "/usr/lib32") and os.path.isdir(var.temp + "/lib32"):
-            pcmd = 'find /usr/lib32 -iname "*.so.*" -exec ln -s "{}" /lib32 \;'
+            pcmd = 'find /usr/lib32/ -iname "*.so.*" -exec ln -sf "{}" /lib32 \;'
+            cmd = 'chroot ' + var.temp + ' /bin/busybox sh -c "' + pcmd + '"'
+            call(cmd, shell=True)
+
+            pcmd = 'find /usr/lib32/ -iname "*.so" -exec ln -sf "{}" /lib32 \;'
             cmd = 'chroot ' + var.temp + ' /bin/busybox sh -c "' + pcmd + '"'
             call(cmd, shell=True)
 
         if os.path.isdir(var.temp + "/usr/lib64") and os.path.isdir(var.temp + "/lib64"):
-            pcmd = 'find /usr/lib64 -iname "*.so.*" -exec ln -s "{}" /lib64 \;'
+            pcmd = 'find /usr/lib64/ -iname "*.so.*" -exec ln -sf "{}" /lib64 \;'
             cmd = 'chroot ' + var.temp + ' /bin/busybox sh -c "' + pcmd + '"'
             call(cmd, shell=True)
 
-    # Copies files that udev uses, like /etc/udev/*, /lib/udev/*, etc
-    @classmethod
-    def CopyUdevSupportFiles(cls):
-        # Copy all of the udev files
-        if os.path.isdir("/etc/udev/"):
-            shutil.copytree("/etc/udev/", var.temp + "/etc/udev/")
+            pcmd = 'find /usr/lib64/ -iname "*.so" -exec ln -sf "{}" /lib64 \;'
+            cmd = 'chroot ' + var.temp + ' /bin/busybox sh -c "' + pcmd + '"'
+            call(cmd, shell=True)
 
-        if os.path.isdir("/lib/udev/"):
-            shutil.copytree("/lib/udev/", var.temp + "/lib/udev/")
+        # Create links to libraries found within /lib itself
+        if os.path.isdir(var.temp + "/lib") and os.path.isdir(var.temp + "/lib"):
+            pcmd = 'find /lib/ -iname "*.so.*" -exec ln -sf "{}" /lib \;'
+            cmd = 'chroot ' + var.temp + ' /bin/busybox sh -c "' + pcmd + '"'
+            call(cmd, shell=True)
+
+            pcmd = 'find /lib/ -iname "*.so" -exec ln -sf "{}" /lib \;'
+            cmd = 'chroot ' + var.temp + ' /bin/busybox sh -c "' + pcmd + '"'
+            call(cmd, shell=True)
+
+    # Copies udev and files that udev uses, like /etc/udev/*, /lib/udev/*, etc
+    @classmethod
+    def CopyUdevAndSupportFiles(cls):
+        # Copy all of the udev files
+        udev_conf_dir = "/etc/udev/"
+        temp_udev_conf_dir = var.temp + udev_conf_dir
+
+        if os.path.isdir(udev_conf_dir):
+            shutil.copytree(udev_conf_dir, temp_udev_conf_dir)
+
+        udev_lib_dir = "/lib/udev/"
+        temp_udev_lib_dir = var.temp + udev_lib_dir
+
+        if os.path.isdir(udev_lib_dir):
+            shutil.copytree(udev_lib_dir, temp_udev_lib_dir)
 
         # Rename udevd and place in /sbin
         udev_path = Tools.GetUdevPath()
         systemd_dir = os.path.dirname(udev_path)
 
-        if os.path.isfile(var.temp + udev_path) and udev_path != "/sbin/udevd":
-            os.rename(var.temp + udev_path, var.temp + "/sbin/udevd")
-            os.rmdir(var.temp + systemd_dir)
+        sbin_udevd = var.sbin + "/udevd"
+        udev_path_temp = var.temp + udev_path
+
+        if os.path.isfile(udev_path_temp) and udev_path != sbin_udevd:
+            udev_path_new = var.temp + sbin_udevd
+            os.rename(udev_path_temp, udev_path_new)
+
+            temp_systemd_dir = var.temp + systemd_dir
+
+            # If the directory is empty, than remove it.
+            # With the recent gentoo systemd root prefix move, it is moving to
+            # /lib/systemd. Thus this directory also contains systemd dependencies
+            # such as: libsystemd-shared-###.so
+            # https://gentoo.org/support/news-items/2017-07-16-systemd-rootprefix.html
+            if not os.listdir(temp_systemd_dir):
+                os.rmdir(temp_systemd_dir)
 
     # Dumps the current system's keymap
     @classmethod
@@ -317,7 +361,7 @@ class Core:
         if os.path.isdir("/etc/modprobe.d/"):
             shutil.copytree("/etc/modprobe.d/", var.temp + "/etc/modprobe.d/")
 
-        cls.CopyUdevSupportFiles()
+        cls.CopyUdevAndSupportFiles()
         cls.DumpSystemKeymap()
 
         # Any last substitutions or additions/modifications should be done here
@@ -375,19 +419,37 @@ class Core:
     # https://github.com/zfsonlinux/zfs/issues/4749
     @classmethod
     def CopyLibGccLibrary(cls):
-        cmd = "gcc-config -L | cut -d ':' -f 1"
-        res = Tools.Run(cmd)
-
-        if len(res) < 1:
-            Tools.Fail("Unable to retrieve gcc library path!")
-
+        # Find the correct path for libgcc
         libgcc_filename = "libgcc_s.so"
         libgcc_filename_main = libgcc_filename + ".1"
-        libgcc_path = res[0] + "/" + libgcc_filename_main
 
-        Tools.SafeCopy(libgcc_path, var.llib64)
-        os.chdir(var.llib64)
-        os.symlink(libgcc_filename_main, libgcc_filename)
+        # check for gcc-config
+        cmd = 'whereis gcc-config | cut -d " " -f 2'
+        res = Tools.Run(cmd)
+
+        if res:
+            # Try gcc-config
+            cmd = "gcc-config -L | cut -d ':' -f 1"
+            res = Tools.Run(cmd)
+
+            if res:
+                # Use path from gcc-config
+                libgcc_path = res[0] + "/" + libgcc_filename_main
+                Tools.SafeCopy(libgcc_path, var.llib64)
+                os.chdir(var.llib64)
+                os.symlink(libgcc_filename_main, libgcc_filename)
+                return
+
+        # Doing a 'whereis <name of libgcc library>' will not work because it seems
+        # that it finds libraries in /lib, /lib64, /usr/lib, /usr/lib64, but not in
+        # /usr/lib/gcc/ (x86_64-pc-linux-gnu/5.4.0, etc)
+
+        # When a better approach is found, we can plug it in here directly and return
+        # in the event that it succeeds. If it fails, we just continue execution
+        # until the end of the function.
+
+        # If we've reached this point, we have failed to copy the gcc library.
+        Tools.Fail("Unable to retrieve gcc library path!")
 
     # Create the initramfs
     @classmethod
@@ -554,11 +616,37 @@ class Core:
 
         bindeps = set()
 
-        # Get the interpreter name that is on this system
-        result = check_output("ls " + var.lib64 + "/ld-linux-x86-64.so*", shell=True, universal_newlines=True).strip()
+        # Musl and non-musl systems are supported.
+        possible_libc_paths = [
+            var.lib64 + "/ld-linux-x86-64.so*",
+            var.lib + "/ld-musl-x86_64.so*",
+        ]
+        libc_found = False
 
-        # Add intepreter to deps since everything will depend on it
-        bindeps.add(result)
+        for libc in possible_libc_paths:
+            try:
+                # (Dirty implementation) Use the exit code of grep with no messages being outputed to see if this interpreter exists.
+                # We don't know the name yet which is why we are using the wildcard in the variable declaration.
+                result = call("grep -Uqs thiswillnevermatch " + libc, shell=True)
+
+                # 0 = match found
+                # 1 = file exists but not found
+                # 2 = file doesn't exist
+                # In situations 0 or 1, we are good, since we just care that the file exists.
+                if result != 0 and result != 1:
+                    continue
+
+                # Get the interpreter name that is on this system
+                result = check_output("ls " + libc, shell=True, universal_newlines=True).strip()
+
+                # Add intepreter to deps since everything will depend on it
+                bindeps.add(result)
+                libc_found = True
+            except Exception as e:
+                pass
+
+        if not libc_found:
+            Tools.Fail("No libc interpreters were found!")
 
         # Get the dependencies for the binaries we've collected and add them to
         # our bindeps set. These will all be copied into the initramfs later.

@@ -1,4 +1,4 @@
-# Copyright 2012-2017 Jonathan Vasquez <jon@xyinn.org>
+# Copyright 2012-2018 Jonathan Vasquez <jon@xyinn.org>
 # 
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
@@ -31,7 +31,7 @@ name = "Bliss Initramfs"
 author = "Jonathan Vasquez"
 email = "jon@xyinn.org"
 contact = author + " <" + email + ">"
-version = "7.0.2"
+version = "7.1.3"
 license = "2-BSD"
 
 # Locations
@@ -46,7 +46,11 @@ features = ""
 
 rstring = str(random.randint(100000000, 999999999))
 
-temp = "/tmp/" + rstring
+# Temporary directory will now be in 'home' rather than
+# in /tmp since people may have executed their /tmp with 'noexec'
+# which would cause bliss-initramfs to fail to execute any binaries
+# in the temp dir.
+temp = home + "/bi-" + rstring
 
 # Directory of Program
 phome = os.path.dirname(os.path.realpath(sys.argv[0]))
