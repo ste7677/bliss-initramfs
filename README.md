@@ -7,8 +7,8 @@
 This script generates an initramfs image with all the included files and
 dependencies needed to mount your filesystem.
 
-It was designed primarily to be a simple alternative to genkernel
-for booting Gentoo Linux on Native ZFS (Not FUSE), but it supports a few
+It was designed primarily to be a simple alternative to genkernel or dracut 
+for booting Gentoo Linux on Native ZFS (Not FUSE) and supports a few
 other combinations such as LUKS, ZFS on LUKS, RAID, and LVM.
 
 All you need to do is run "./mkinitrd", select the options you want "a-la-carte",
