@@ -1,5 +1,5 @@
-### Maintained fork of Bliss Initramfs iriginally designed by Jonathan Vasquez (fearedbliss)
-### originally designed by Jonathan Vasquez (fearedbliss)
+#### Maintained fork of Bliss Initramfs iriginally designed by Jonathan Vasquez (fearedbliss)
+#### originally designed by Jonathan Vasquez (fearedbliss)
 
 # Bliss Initramfs 7.1.5
 #### Jonathan Vasquez (fearedbliss)
