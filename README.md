@@ -1,4 +1,4 @@
-## This project is no longer in development. Please fork. Thank you.
+# Maintained fork of Bliss Initramfs
 
 ## Bliss Initramfs 7.1.4
 #### Jonathan Vasquez (fearedbliss)
