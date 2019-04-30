@@ -1,6 +1,6 @@
-# Maintained fork of Bliss Initramfs
+## Maintained fork of Bliss Initramfs
 
-## Bliss Initramfs 7.1.4
+# Bliss Initramfs 7.1.4
 #### Jonathan Vasquez (fearedbliss)
 #### Designed for Gentoo Linux
 
