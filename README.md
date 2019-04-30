@@ -37,3 +37,7 @@ Please have the following installed:
 - app-crypt/gnupg (LUKS support)
 
 For more information/instructions check the USAGE file.
+
+## Gentoo Ebuilds
+
+sys-kernel/bliss-initramfs: Updated gentoo ebuilds are available at the overlay [ste7677/gentoo-overlay-ste76](https://github.com/ste7677/gentoo-overlay-ste76). 
