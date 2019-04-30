@@ -24,11 +24,7 @@ author = "Jonathan Vasquez"
 email = "jon@xyinn.org"
 contact = author + " <" + email + ">"
 version = "7.1.4"
-<<<<<<< HEAD
-license = "2-BSD"
-=======
 license = "GPLv3+"
->>>>>>> 26579dbb3fd60547b07c446367483f0419c42172
 
 # Locations
 home = os.getcwd()
